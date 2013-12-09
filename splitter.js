@@ -15,12 +15,13 @@
     return {
       restrict: 'A',
       link: function(scope, element, attrs) {
-        var $, clientXProp, drag, draggingHandler, handler, heightProp, i, jqPane, jqPanes, left, leftProp, length, maxWidthProp, minWidthProp, pane, panes, rightPane, rightProp, topProp, vertical, verticalClass, widthProp, _i;
+        var $, clientXProp, domElement, drag, draggingHandler, elementHeight, elementLeft, elementRight, elementTop, elementWidth, handler, handlers, heightProp, i, jqPane, jqPanes, left, leftProp, length, maxWidthProp, minWidthProp, pane, panes, topProp, vertical, verticalClass, widthProp, _i;
         panes = element.children();
         length = panes.length;
         if (length < 2) {
           return;
         }
+        domElement = element[0];
         element.css('position', 'absolute');
         $ = angular.element;
         vertical = attrs.vertical;
@@ -31,7 +32,6 @@
           maxWidthProp = 'max-height';
           leftProp = 'top';
           topProp = 'left';
-          rightProp = 'bottom';
           clientXProp = 'clientY';
           verticalClass = 'vertical';
         } else {
@@ -41,13 +41,15 @@
           maxWidthProp = 'max-width';
           leftProp = 'left';
           topProp = 'top';
-          rightProp = 'right';
           clientXProp = 'clientX';
           verticalClass = 'horizontal';
         }
-        drag = false;
-        draggingHandler = null;
-        left = 0;
+        elementHeight = computedStyle(domElement, heightProp);
+        elementTop = computedStyle(domElement, topProp);
+        elementLeft = parseInt(computedStyle(domElement, leftProp));
+        elementWidth = parseInt(computedStyle(domElement, widthProp));
+        elementRight = elementLeft + elementWidth;
+        drag = draggingHandler = null;
         jqPanes = (function() {
           var _i, _results;
           _results = [];
@@ -56,21 +58,21 @@
           }
           return _results;
         })();
+        handlers = [];
         for (i = _i = 0; 0 <= length ? _i < length : _i > length; i = 0 <= length ? ++_i : --_i) {
           pane = panes[i];
           jqPane = jqPanes[i];
           jqPane.css('position', 'absolute');
-          jqPane.minWidth = parseInt(computedStyle(pane, minWidthProp) || '10');
-          jqPane.width = parseInt(computedStyle(pane, widthProp) || jqPane.css(widthProp, '100px') && '100');
-          jqPane.maxWidth = parseInt(computedStyle(pane, maxWidthProp) || '10000');
+          pane.minWidth = parseInt(computedStyle(pane, minWidthProp) || '0');
+          pane.width = parseInt(computedStyle(pane, widthProp) || jqPane.css(widthProp, '100px') && '100');
+          pane.maxWidth = parseInt(computedStyle(pane, maxWidthProp) || '10000');
           if (i < length - 1) {
             handler = angular.element('<div class="' + verticalClass + ' split-handler" style="position:absolute;"></div>');
             left = left + jqPane.width;
-            handler.leftPane = jqPane;
-            handler.rightPane = rightPane = jqPanes[i + 1];
+            handler.index = i;
             handler.css(leftProp, computedStyle(panes[i + 1], leftProp));
-            handler.css(heightProp, computedStyle(element[0], heightProp));
-            handler.css(topProp, computedStyle(element[0], topProp));
+            handler.css(heightProp, elementHeight);
+            handler.css(topProp, elementTop);
             (function(handler) {
               return handler.bind('mousedown', function(ev) {
                 ev.preventDefault();
@@ -79,37 +81,48 @@
               });
             })(handler);
             jqPane.after(handler);
+            handlers.push(handler);
           }
         }
-        console.log(left);
-        (function(widthProp, minWidthProp, maxWidthProp, leftProp, rightProp, clientXProp) {
-          return element.bind('mousemove', function(ev) {
-            var bounds, boundsLeft, pos, width;
-            if (!drag || length < 2) {
-              return;
-            }
-            bounds = element[0].getBoundingClientRect();
-            pos = 0;
-            boundsLeft = bounds[leftProp];
-            width = bounds[rightProp] - boundsLeft;
-            pos = ev[clientXProp] - boundsLeft;
-            if (pos < draggingHandler.leftPane.minWidth) {
-              return;
-            }
-            if (pos > draggingHandler.leftPane.maxWidth) {
-              return;
-            }
-            if (width - pos < draggingHandler.rightPane.minWidth) {
-              return;
-            }
-            if (width - pos > draggingHandler.rightPane.maxWidth) {
-              return;
-            }
-            draggingHandler.css(leftProp, pos + 'px');
-            draggingHandler.leftPane.css(widthProp, pos + 'px');
-            return draggingHandler.rightPane.css(leftProp, pos + 'px');
-          });
-        })(widthProp, minWidthProp, maxWidthProp, leftProp, rightProp, rightProp);
+        element.bind('mousemove', function(ev) {
+          var leftPane, leftPaneWidth, pos, pos_left, right, rightPane, right_pos;
+          if (!drag) {
+            return;
+          }
+          i = draggingHandler.index;
+          leftPane = panes[i];
+          rightPane = panes[i + 1];
+          if (i === 0) {
+            left = elementLeft;
+          } else {
+            left = parseInt(handlers[i - 1].css(leftProp));
+          }
+          if (i === length - 2) {
+            right = elementRight;
+          } else {
+            right = parseInt(handlers[i + 1].css(leftProp));
+          }
+          pos = ev[clientXProp];
+          pos_left = pos - left;
+          leftPaneWidth = pos - left;
+          if (pos_left < leftPane.minWidth) {
+            return;
+          }
+          if (pos_left > leftPane.maxWidth) {
+            return;
+          }
+          right_pos = right - pos;
+          if (right_pos < rightPane.minWidth) {
+            return;
+          }
+          if (right_pos > rightPane.maxWidth) {
+            return;
+          }
+          jqPanes[i].css(widthProp, leftPaneWidth + 'px');
+          draggingHandler.css(leftProp, pos + 'px');
+          jqPanes[i + 1].css(leftProp, pos + 'px');
+          return jqPanes[i + 1].css(widthProp, right_pos + 'px');
+        });
         return angular.element(document).bind('mouseup', function(ev) {
           return drag = false;
         });
