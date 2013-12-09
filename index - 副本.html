@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html ng-app="myApp">
+<head>
+  <meta charset=utf-8 />
+  <title>splitter</title>
+  <style type="text/css">
+       div[splitter]{
+           height:200px;
+           border: 1px solid black;
+       }
+       #hpane1{
+           position: absolute;
+           min-width: 10px;
+           /*max-width: 60px;*/
+           width:200px;
+       }
+       #hpane2{
+           position: absolute;
+           left:200px;
+           min-width: 10px;
+           /*max-width: 60px;*/
+           width:200px;
+       }
+       #hpane3{
+           position: absolute;
+           left:300px;
+           min-width: 70px;
+           /*max-width: 60px;*/
+           width:200px;
+       }
+       #vpane1{
+           position: absolute;
+           top:300px;
+           min-width: 70px;
+           /*max-width: 60px;*/
+           width:200px;
+           height: 100%;
+       }
+       #vpane2{
+           position: absolute;
+           top:300px;
+           min-width: 70px;
+           /*max-width: 60px;*/
+           width:200px;
+           height: 100%;
+       }
+       #vpane3{
+           position: absolute;
+           top:300px;
+           min-width: 70px;
+           /*max-width: 60px;*/
+           width:200px;
+           height: 100%;
+       }
+       .vertical.split-handler{
+           position: relative;
+           height: 4px;
+           left: 0px;  right: 0px;
+           cursor: ns-resize;
+           background-color: black;
+           z-index:999;
+       }
+       .horizontal.split-handler{
+           position: relative;
+           width: 4px;
+           top: 0px; bottom: 100px;
+           cursor: ew-resize;
+           background-color: black;
+           z-index:999;
+       }
+   </style>
+</head>
+<body>
+  <div splitter>
+      <div id="hpane1">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab adipisci delectus deserunt est iusto mollitia nisi odio quas rerum totam?</div>
+      <div id="hpane2">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab adipisci delectus deserunt est iusto mollitia nisi odio quas rerum totam?</div>
+      <div id="hpane3">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab adipisci delectus deserunt est iusto mollitia nisi odio quas rerum totam?</div>
+      <!--<div splitter class="horizontal split-handler"></div>-->
+      <div splitter vertical="true">
+          <div id="vpane1">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Accusamus amet aut deserunt eos modi, molestiae recusandae velit veritatis voluptatibus voluptatum!</div>
+          <div id="vpane2">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Id, ipsum magni maxime non perspiciatis possimus reiciendis reprehenderit sit? Obcaecati, vero?</div>
+          <div id="vpane3">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Id, ipsum magni maxime non perspiciatis possimus reiciendis reprehenderit sit? Obcaecati, vero?</div>
+          <div id="vpane4">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Id, ipsum magni maxime non perspiciatis possimus reiciendis reprehenderit sit? Obcaecati, vero?</div>
+      </div>
+  </div>
+  <script src="angular.js"></script>
+  <script src="splitter.js"></script>
+  <script>
+    angular.module('myApp', ['splitter']);
+  </script>
+</body>
+</html>
