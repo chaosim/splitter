@@ -30,29 +30,69 @@ app.directive 'splitter', ->
     drag = draggingHandler =  null
     jqPanes = for i in [0...length] then $(panes[i])
     handlers = []
-    for i in [0...length]
+    pane =  panes[length-1]
+    jqPane = jqPanes[length-1]
+    jqPane.css('position', 'absolute')
+    pane.minWidth = parseInt(computedStyle(pane, minWidthProp) or '0')
+    pane.width = parseInt(computedStyle(pane, widthProp) or jqPane.css(widthProp, '100px') and '100')
+    for i in [0...length-1]
       pane = panes[i]
       jqPane = jqPanes[i]
       jqPane.css('position', 'absolute')
       pane.minWidth = parseInt(computedStyle(pane, minWidthProp) or '0')
       pane.width = parseInt(computedStyle(pane, widthProp) or jqPane.css(widthProp, '100px') and '100')
-      pane.maxWidth = parseInt(computedStyle(pane, maxWidthProp) or '10000')
-      if i<length-1
-        handler = angular.element('<div class="'+verticalClass+  ' split-handler" style="position:absolute;"></div>')
-        left = left+jqPane.width
-        handler.index = i
-        handler.css(leftProp, computedStyle(panes[i+1], leftProp))
-        handler.css(heightProp, elementHeight)
-        handler.css(topProp, elementTop)
-        do (handler=handler) ->
-          handler.bind 'mousedown',  (ev) ->
-            ev.preventDefault(); drag = true; draggingHandler = handler
-        jqPane.after handler
-        handlers.push handler
+      handler = angular.element('<div class="'+verticalClass+  ' split-handler" style="position:absolute;"></div>')
+      left = left+jqPane.width
+      handler.index = i
+      handler.css(leftProp, computedStyle(panes[i+1], leftProp))
+      handler.css(heightProp, elementHeight)
+      handler.css(topProp, elementTop)
+      jqPane.after handler
+      handlers.push handler
+      do (handler=handler, pane=pane, i=i) ->
+        handler.bind 'mousedown',  (ev) ->
+          ev.preventDefault(); drag = true; draggingHandler = handler
+        handler.bind 'click', (ev) ->
+          ev.preventDefault()
+          if handler.clicked
+            handler.clicked = false
+            if i<length-2
+              if parseInt(handlers[i+1].css(leftProp))<parseInt(handler.leftProp) then return
+            jqPanes[i].css(widthProp, handler.leftPaneWidth)
+            handler.css(leftProp, handler.leftProp)
+            jqPanes[i+1].css(leftProp, handler.rightPaneLeftProp)
+            jqPanes[i+1].css(widthProp, handler.rightPaneWidthProp)
+            return
+          rightPane = panes[i+1]
+          handler.leftPaneWidth = jqPanes[i].css(widthProp)
+          handler.leftProp = handler.css(leftProp)
+          handler.rightPaneLeftProp = jqPanes[i+1].css(leftProp)
+          handler.rightPaneWidthProp = jqPanes[i+1].css(widthProp)
+          if i==length-2 and length!=2
+            leftPaneWidth = elementRight-parseInt(handlers[i-1].css(leftProp))-rightPane.minWidth
+            jqPanes[i].css(widthProp, leftPaneWidth+'px')
+            pos = elementRight-rightPane.minWidth
+            handler.css(leftProp, pos + 'px')
+            jqPanes[i+1].css(leftProp, pos+'px')
+            jqPanes[i+1].css(widthProp, rightPane.minWidth + 'px')
+          else
+            leftPaneWidth = pane.minWidth
+            if i==0 then pos = elementLeft+leftPaneWidth
+            else pos = parseInt(handlers[i-1].css(leftProp))+leftPaneWidth
+            if length!=2 then right = parseInt(handlers[i+1].css(leftProp))
+            else right = elementRight
+            right_pos = right-pos
+            jqPanes[i].css(widthProp, leftPaneWidth+'px')
+            handler.css(leftProp, pos + 'px')
+            jqPanes[i+1].css(leftProp, pos+'px')
+            jqPanes[i+1].css(widthProp, right_pos+'px')
+          handler.clicked = true
 
     element.bind 'mousemove', (ev) ->
       if !drag then return
       i = draggingHandler.index
+      draggingHandler.clicked = false
+      if i<length-2 then handlers[i+1].clicked = false
       leftPane = panes[i]
       rightPane = panes[i+1]
       if i==0 then left = elementLeft
@@ -63,10 +103,8 @@ app.directive 'splitter', ->
       pos_left = pos-left
       leftPaneWidth = pos-left
       if (pos_left < leftPane.minWidth) then return
-      if (pos_left > leftPane.maxWidth) then return
       right_pos = right - pos
       if (right_pos < rightPane.minWidth) then return
-      if (right_pos > rightPane.maxWidth) then return
       jqPanes[i].css(widthProp, leftPaneWidth + 'px')
       draggingHandler.css(leftProp, pos + 'px')
       jqPanes[i+1].css(leftProp, pos + 'px')
